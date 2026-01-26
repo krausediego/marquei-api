@@ -1,5 +1,46 @@
-import { Elysia } from "elysia";
+import openapi from "@elysiajs/openapi";
+import { Elysia, t } from "elysia";
+import { auth } from "./auth";
+import { betterAuthPlugin, OpenAPI } from "@/http/plugins/better-auth";
 
-const app = new Elysia().get("/", () => "Hello Elysia").listen(3333);
+const app = new Elysia()
+  .use(
+    openapi({
+      documentation: {
+        components: await OpenAPI.components,
+        paths: await OpenAPI.getPaths(),
+      },
+    }),
+  )
+  .use(betterAuthPlugin)
+  .get("/", () => "Hello Elysia")
+  .get(
+    "/users/:id",
+    ({ params, user }) => {
+      const userId = params.id;
+
+      const authenticatedUserName = user.name;
+      const authenticatedUserId = user.id;
+
+      return { id: authenticatedUserId, name: authenticatedUserName };
+    },
+    {
+      auth: true,
+      detail: {
+        summary: "Find user by ID",
+        tags: ["users"],
+      },
+      params: t.Object({
+        id: t.String(),
+      }),
+      response: {
+        200: t.Object({
+          id: t.String(),
+          name: t.String(),
+        }),
+      },
+    },
+  )
+  .listen(3333);
 
 console.log(`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`);
