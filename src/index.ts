@@ -1,6 +1,7 @@
 import openapi from "@elysiajs/openapi";
 import { Elysia, t } from "elysia";
 import { betterAuthPlugin, OpenAPI } from "@/http/plugins/better-auth";
+import { auth } from "./auth";
 
 const app = new Elysia()
   .use(
@@ -15,7 +16,7 @@ const app = new Elysia()
   .get("/", () => "Hello Elysia")
   .get(
     "/users/:id",
-    ({ params, user }) => {
+    async ({ params, user }) => {
       const userId = params.id;
 
       const authenticatedUserName = user.name;
@@ -25,7 +26,7 @@ const app = new Elysia()
     },
     {
       auth: true,
-      org: true,
+      // org: true,
       detail: {
         summary: "Find user by ID",
         tags: ["users"],

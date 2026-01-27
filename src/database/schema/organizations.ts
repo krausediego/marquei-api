@@ -25,6 +25,7 @@ export const organizations = pgTable(
     logo: text("logo"),
     createdAt: timestamp("created_at").notNull(),
     metadata: text("metadata"),
+    stripeCustomerId: text("stripe_customer_id"),
   },
   (table) => [uniqueIndex("organizations_slug_uidx").on(table.slug)],
 );

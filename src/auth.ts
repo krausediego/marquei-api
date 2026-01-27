@@ -19,19 +19,80 @@ export const auth = betterAuth({
         organization: {
           additionalFields: {
             description: { type: "string", required: true },
+            state: { type: "string", required: true },
+            city: { type: "string", required: true },
+            district: { type: "string", required: true },
+            street: { type: "string", required: true },
             phone: { type: "string", required: true, unique: true },
             number: { type: "number", required: true },
-            location: { type: "string", required: true },
+            location: { type: "json", required: true },
             complement: { type: "string", required: false },
             postalCode: { type: "string", required: false },
           },
         },
       },
+      // organizationHooks: {
+      //   beforeCreateOrganization: async ({ organization }) => {
+      //     return {
+      //       data: {
+      //         ...organization,
+      //         location: { x: -90.0, y: 18.7 },
+      //       },
+      //     };
+      //   },
+      // },
     }),
     stripe({
       stripeClient,
       stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET,
       createCustomerOnSignUp: true,
+      organization: {
+        enabled: true,
+      },
+      subscription: {
+        enabled: true,
+        authorizeReference: async ({ user, session, referenceId, action }) => {
+          const org = await db.query.members.findFirst({
+            where(fields, { and, eq }) {
+              return and(eq(fields.organizationId, referenceId), eq(fields.userId, user.id));
+            },
+          });
+
+          return org?.role === "owner";
+        },
+        plans: [
+          {
+            name: "standard",
+            priceId: "price_1Su03uAU7tDzPSpagM66FXmC",
+            limits: {
+              professionals: 3,
+            },
+            freeTrial: {
+              days: 14,
+            },
+          },
+          {
+            name: "premium",
+            priceId: "price_1Su04DAU7tDzPSpaa7MQFEjR",
+            limits: {
+              professionals: 6,
+            },
+            freeTrial: {
+              days: 14,
+            },
+          },
+          {
+            name: "pro",
+            priceId: "price_1Su04UAU7tDzPSpaX8vbzC1U",
+            limits: {
+              professionals: 12,
+            },
+            freeTrial: {
+              days: 14,
+            },
+          },
+        ],
+      },
     }),
   ],
   database: drizzleAdapter(db, {
@@ -42,6 +103,7 @@ export const auth = betterAuth({
     database: {
       generateId: false,
     },
+    disableOriginCheck: true,
   },
   emailAndPassword: {
     enabled: true,
@@ -49,6 +111,33 @@ export const auth = betterAuth({
     password: {
       hash: (password: string) => Bun.password.hash(password),
       verify: ({ password, hash }) => Bun.password.verify(password, hash),
+    },
+  },
+  databaseHooks: {
+    session: {
+      create: {
+        before: async (session) => {
+          const membership = await db.query.members.findFirst({
+            orderBy(fields, { asc }) {
+              return asc(fields.createdAt);
+            },
+            where(fields, { eq }) {
+              return eq(fields.userId, session.userId);
+            },
+          });
+
+          if (!membership) {
+            return { data: session };
+          }
+
+          return {
+            data: {
+              ...session,
+              activeOrganizationId: membership.organizationId,
+            },
+          };
+        },
+      },
     },
   },
   session: {

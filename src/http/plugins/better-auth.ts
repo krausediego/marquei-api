@@ -22,12 +22,21 @@ export const betterAuthPlugin = new Elysia({ name: "better-auth" }).mount(auth.h
       }
 
       const activeOrgId = session?.session?.activeOrganizationId;
+      const subscription = await auth.api.listActiveSubscriptions({
+        query: {
+          referenceId: session?.session?.activeOrganizationId ?? "",
+        },
+      });
 
       if (!activeOrgId) {
         return status(403, { message: "Organization required", code: "ORG_REQUIRED" });
       }
 
-      return { ...session, activeOrgId };
+      if (!subscription) {
+        return status(403, { message: "Not active plan" });
+      }
+
+      return { ...session, activeOrgId, subscription };
     },
   },
 });
