@@ -12,6 +12,8 @@ const stripeClient = new Stripe(env.STRIPE_SECRET_KEY, {
 
 export const auth = betterAuth({
   basePath: "/auth",
+  baseURL: "http://localhost:5173",
+  trustedOrigins: ["http://localhost:5173"],
   plugins: [
     openAPI(),
     organization({
@@ -31,16 +33,6 @@ export const auth = betterAuth({
           },
         },
       },
-      // organizationHooks: {
-      //   beforeCreateOrganization: async ({ organization }) => {
-      //     return {
-      //       data: {
-      //         ...organization,
-      //         location: { x: -90.0, y: 18.7 },
-      //       },
-      //     };
-      //   },
-      // },
     }),
     stripe({
       stripeClient,
@@ -145,6 +137,12 @@ export const auth = betterAuth({
     cookieCache: {
       enabled: true,
       maxAge: 60 * 5,
+    },
+  },
+  socialProviders: {
+    google: {
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
     },
   },
 });

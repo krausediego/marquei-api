@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@better-auth/stripe": "^1.4.17",
+    "@elysiajs/cors": "^1.4.1",
     "@elysiajs/openapi": "^1.4.14",
     "@sinclair/typebox": "^0.34.48",
     "better-auth": "^1.4.17",
